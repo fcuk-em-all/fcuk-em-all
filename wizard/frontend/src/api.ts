@@ -180,6 +180,14 @@ export interface StorageCheck {
 export const validateStorage = (path: string) =>
   jsonReq<StorageCheck>('POST', '/api/setup/validate-storage', { path })
 
+export interface StorageRequirements {
+  min_free_gb: number
+  warn_free_gb: number
+}
+// Single source of truth for the storage thresholds (backend constants).
+export const getStorageRequirements = () =>
+  j<StorageRequirements>('/api/setup/storage')
+
 export const configureLocalTls = () =>
   jsonReq<{ ok: boolean; note?: string }>('POST', '/api/setup/configure-local-tls', {})
 export const configureDomainTls = (b: { domain: string; dns_provider: string; dns_api_key: string }) =>

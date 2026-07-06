@@ -1628,11 +1628,27 @@ def _config_load() -> dict:
 def _config_merge(patch: dict):
     cfg = _config_load()
     cfg.update(patch)
-    os.makedirs(os.path.dirname(CONFIG_PATH) or ".", exist_ok=True)
-    tmp = CONFIG_PATH + ".tmp"
-    with open(tmp, "w") as f:
-        json.dump(cfg, f, indent=2)
-    os.replace(tmp, CONFIG_PATH)
+    d = os.path.dirname(CONFIG_PATH) or "."
+    os.makedirs(d, exist_ok=True)
+    tmp = os.path.join(d, os.path.basename(CONFIG_PATH) + ".tmp")
+    try:
+        # Preferred: atomic temp+rename in CONFIG_PATH's OWN directory (same
+        # filesystem, so os.replace works).
+        with open(tmp, "w") as f:
+            json.dump(cfg, f, indent=2)
+        os.replace(tmp, CONFIG_PATH)
+    except OSError:
+        # CONFIG_PATH is a single-file bind mount whose parent dir (the image
+        # layer) is not writable by the wizard user, so a sibling temp cannot be
+        # created there - and a cross-filesystem os.replace from /tmp would EXDEV.
+        # Write the bind-mounted file in place (it IS writable).
+        try:
+            if os.path.exists(tmp):
+                os.unlink(tmp)
+        except OSError:
+            pass
+        with open(CONFIG_PATH, "w") as f:
+            json.dump(cfg, f, indent=2)
 
 
 def _totp_secret() -> str:
@@ -1705,6 +1721,16 @@ def setup_validate_storage(payload: dict = Body(...)):
         "warn": free_gb < _SETUP_WARN_FREE_GB,
         "min_gb": _SETUP_MIN_FREE_GB,
         "message": ("writable" if writable else "NOT writable") + f", {free_gb:.1f} GB free",
+    }
+
+
+@app.get("/api/setup/storage")
+def setup_storage_requirements():
+    """Storage thresholds - the single source of truth the setup wizard reads so
+    the frontend never hardcodes the GB values."""
+    return {
+        "min_free_gb": _SETUP_MIN_FREE_GB,
+        "warn_free_gb": _SETUP_WARN_FREE_GB,
     }
 
 

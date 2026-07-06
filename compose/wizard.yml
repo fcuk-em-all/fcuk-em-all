@@ -20,6 +20,10 @@ services:
       - compose/wizard.env
     volumes:
       - /srv/media:/srv/media:rw
+      # config.json is written by the wizard during first-run setup and must
+      # persist across restarts -> bind-mounted from the project root (install.sh
+      # creates it before the wizard starts).
+      - ./config.json:/app/config.json:rw
       # Relative paths resolve against PROJECT_ROOT (bootstrap runs compose with
       # --project-directory=PROJECT_ROOT), so repo-root paths use ./ and the
       # env_file (which lives in compose/) is compose/wizard.env.

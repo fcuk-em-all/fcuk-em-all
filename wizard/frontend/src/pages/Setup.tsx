@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { COLORS } from '../tokens'
 import {
-  validateStorage, configureLocalTls, configureDomainTls, createAdmin,
+  validateStorage, getStorageRequirements, configureLocalTls, configureDomainTls, createAdmin,
   configureModules, totpEnroll, verifyTotp, completeSetup,
-  type StorageCheck, type PropRow, type TotpEnroll,
+  type StorageCheck, type StorageRequirements, type PropRow, type TotpEnroll,
 } from '../api'
 
 // Colors mirror tokens.ts; accent/status literals are local to this one-off screen.
@@ -57,6 +57,7 @@ export default function Setup({ onComplete }: { onComplete: () => void }) {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [storageResult, setStorageResult] = useState<StorageCheck | null>(null)
+  const [storageReq, setStorageReq] = useState<StorageRequirements | null>(null)
   const [propagation, setPropagation] = useState<PropRow[] | null>(null)
   const [totp, setTotp] = useState<TotpEnroll | null>(null)
   const [totpCode, setTotpCode] = useState('')
@@ -65,6 +66,11 @@ export default function Setup({ onComplete }: { onComplete: () => void }) {
     setData((d) => ({ ...d, [k]: v }))
 
   const strength = useMemo(() => pwStrength(data.password), [data.password])
+
+  // fetch the storage thresholds once - single source of truth (backend constants)
+  useEffect(() => {
+    getStorageRequirements().then(setStorageReq).catch(() => {})
+  }, [])
 
   // enrol TOTP when reaching step 6 (index 5)
   useEffect(() => {
@@ -142,7 +148,7 @@ export default function Setup({ onComplete }: { onComplete: () => void }) {
           )}
 
           {step === 1 && (
-            <Field label="MEDIA STORAGE PATH" hint="Where your library lives. Needs ≥50 GB free and must be writable.">
+            <Field label="MEDIA STORAGE PATH" hint={storageReq ? `Where your library lives. Needs ≥${storageReq.min_free_gb} GB free and must be writable.` : 'Where your library lives. Must be writable with enough free space.'}>
               <div className="flex gap-2">
                 <input className="flex-1 px-3 py-2 text-[13px] outline-none" value={data.storage}
                        onChange={(e) => { set('storage', e.target.value); setStorageResult(null) }}
@@ -156,8 +162,8 @@ export default function Setup({ onComplete }: { onComplete: () => void }) {
               {storageResult && (
                 <div className="mt-3 text-[12px]" style={{ color: storageResult.ok ? OK : DANGER }}>
                   {storageResult.ok ? '✓ ' : '✗ '}{storageResult.message}
-                  {storageResult.warn && storageResult.ok && (
-                    <span style={{ color: ACCENT }}> — below 100 GB, consider more headroom</span>
+                  {storageResult.warn && storageResult.ok && storageReq && (
+                    <span style={{ color: ACCENT }}> — below {storageReq.warn_free_gb} GB, consider more headroom</span>
                   )}
                 </div>
               )}
