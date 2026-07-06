@@ -1,0 +1,28 @@
+# compose/qbittorrent.yml - download client (Ep4 Pass4a). LinuxServer image, arm64
+# digest-pinned. Internal WebUI :8080 only (NOT published; Caddy edge is 43.sh).
+# Downloads land under /srv/media/downloads (same fs as the library -> hardlink imports).
+services:
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent@sha256:63159c3ae2c3e45868661a3bb8e2a79df30cec4cc35203c600364eb8a30ba212
+    container_name: fcuk-em-all-qbittorrent
+    restart: unless-stopped
+    network_mode: "container:fcuk-em-all-gluetun"
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: "UTC"
+      WEBUI_PORT: "8080"
+    volumes:
+      - qbittorrent_config:/config
+      - /srv/media/downloads:/downloads:rw
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+volumes:
+  qbittorrent_config:

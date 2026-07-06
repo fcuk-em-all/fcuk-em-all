@@ -1,0 +1,34 @@
+# compose/audiobookshelf.yml - FCUK-EM-ALL media app, behind the Caddy gate.
+# On the external 'fcuk-em-all' network, fronted by Caddy as audiobookshelf:13378.
+# Image pinned by ARM64 manifest DIGEST (law 4; amd64 re-resolves). Whole-app
+# gated by Authelia two_factor. Media mounts deferred (no real media yet) -
+# config/standup only, same as Jellyfin.
+services:
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf@sha256:3484d1fd10fa61a89bb2b5f4747daba91c950122cecf7104d11e14c5091d5117
+    container_name: fcuk-em-all-audiobookshelf
+    restart: unless-stopped
+    networks: [fcuk-em-all]
+    environment:
+      PORT: "13378"
+      TZ: "UTC"
+    volumes:
+      - audiobookshelf_config:/config
+      - audiobookshelf_metadata:/metadata
+      - /srv/media/audiobooks:/audiobooks:ro
+    healthcheck:
+      # ABS 2.35.x dropped curl from the image; use wget (present) - GET /healthcheck.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:13378/healthcheck"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+networks:
+  fcuk-em-all:
+    external: true
+volumes:
+  audiobookshelf_config:
+  audiobookshelf_metadata:

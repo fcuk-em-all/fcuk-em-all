@@ -1,0 +1,32 @@
+# compose/kavita.yml - FCUK-EM-ALL media app, behind the Caddy gate.
+# On the external 'fcuk-em-all' network, fronted by Caddy as kavita:5000.
+# Image pinned by ARM64 manifest DIGEST (law 4; amd64 re-resolves). Whole-app
+# gated by Authelia two_factor. Media mounts deferred (no real media yet) -
+# config/standup only, same as Jellyfin.
+services:
+  kavita:
+    image: linuxserver/kavita@sha256:29d28a059b8f710a1f81d6a945bc37c719fef540f37ef44ff3c0aadf546f3a3d
+    container_name: fcuk-em-all-kavita
+    restart: unless-stopped
+    networks: [fcuk-em-all]
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: "UTC"
+    volumes:
+      - kavita_config:/config
+      - /srv/media/books:/books:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:5000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+networks:
+  fcuk-em-all:
+    external: true
+volumes:
+  kavita_config:

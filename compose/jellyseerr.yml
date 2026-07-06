@@ -1,0 +1,32 @@
+# compose/jellyseerr.yml - request/discovery front-end (Ep4 Pass4a). seerr-team/seerr
+# v3.3.0, SSO-patched (Remote-User trusted-header branch) + built locally as
+# fcuk-em-all/jellyseerr:sso-patch. Runs as node:node (UID 1000) - the
+# jellyseerr_config volume is chowned 1000:1000. v3 ships no bundled init, so
+# init: true below. Config at /app/config. Internal :5055 only; the Authelia OIDC
+# client (requests.<domain>) is pre-created during configuration.
+services:
+  jellyseerr:
+    image: fcuk-em-all/jellyseerr:sso-patch
+    container_name: fcuk-em-all-jellyseerr
+    restart: unless-stopped
+    init: true
+    networks: [fcuk-em-all]
+    environment:
+      TZ: "UTC"
+      LOG_LEVEL: "info"
+    volumes:
+      - jellyseerr_config:/app/config
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:5055/api/v1/status"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+networks:
+  fcuk-em-all:
+    external: true
+volumes:
+  jellyseerr_config:

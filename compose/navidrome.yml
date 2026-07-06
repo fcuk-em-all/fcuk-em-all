@@ -1,0 +1,39 @@
+# compose/navidrome.yml - FCUK-EM-ALL media app, behind the Caddy gate.
+# On the external 'fcuk-em-all' network, fronted by Caddy as navidrome:4533.
+# Image pinned by ARM64 manifest DIGEST (law 4; amd64 re-resolves). Whole-app
+# gated by Authelia two_factor. Media mounts deferred (no real media yet) -
+# config/standup only, same as Jellyfin.
+services:
+  navidrome:
+    image: deluan/navidrome@sha256:1140169248df4b89709861b19eb3a0f2feb77343c7dc89c0de5c203299f37665
+    container_name: fcuk-em-all-navidrome
+    restart: unless-stopped
+    networks: [fcuk-em-all]
+    environment:
+      TZ: "UTC"
+      # Reverse-proxy header auth (SSO Phase 1). Navidrome trusts the Remote-User
+      # header Caddy forwards AFTER a successful Authelia session and auto-creates
+      # the user. Whitelisted to the fcuk-em-all subnet (the trusted internal
+      # boundary; Caddy is the only ingress that sets Remote-User post-auth) rather
+      # than Caddy's exact IP, so it survives Caddy container recreates. The
+      # Subsonic /rest gate-split (26.sh) still lets native clients use their own
+      # salt+token credentials when NO Remote-User header is present.
+      ND_REVERSEPROXYUSERHEADER: "Remote-User"
+      ND_REVERSEPROXYWHITELIST: "172.21.0.0/16"
+    volumes:
+      - navidrome_data:/data
+      - /srv/media/music:/music:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:4533/ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+networks:
+  fcuk-em-all:
+    external: true
+volumes:
+  navidrome_data:

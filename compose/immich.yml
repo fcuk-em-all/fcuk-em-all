@@ -1,0 +1,80 @@
+# compose/immich.yml - FCUK-EM-ALL photos (Immich) - the heavy, multi-container,
+# RAM-GATED, opt-in app. Four services, project fcuk-em-all-immich. All on the
+# external 'fcuk-em-all' network, each pinned by ARM64 manifest DIGEST (law 4).
+# Images + the EXACT required Postgres (vectorchord/pgvecto.rs build) are taken
+# from Immich's own current release compose. ML is CPU-ONLY (GPU/accelerated
+# inference is the honest arm64 deferral). Real media mounts + backup deferred.
+# Secrets (DB password etc.) come from ./secrets/immich.env (gitignored).
+services:
+  immich:
+    image: ghcr.io/immich-app/immich-server@sha256:9e542f096e1098bbf6ad06256a3750e7b9c534e5c8bfc80639d0763304bab357
+    container_name: fcuk-em-all-immich
+    restart: unless-stopped
+    networks: [fcuk-em-all]
+    env_file:
+      - ./secrets/immich.env
+    volumes:
+      - immich_upload:/data
+      # fcuk-em-all photos external library (29.sh): dropped photos land in
+      # /srv/media/photos and Immich ingests them as an EXTERNAL library (read-only).
+      - /srv/media/photos:/external:ro
+    depends_on:
+      immich-postgres:
+        condition: service_healthy
+      immich-redis:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning@sha256:b4c142488028674d30fc48364ea060168e44a9b8b862de333664845b64a0d205
+    container_name: fcuk-em-all-immich-ml
+    restart: unless-stopped
+    networks: [fcuk-em-all]
+    env_file:
+      - ./secrets/immich.env
+    volumes:
+      - immich_modelcache:/cache
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  immich-redis:
+    image: docker.io/valkey/valkey@sha256:b15b23d4d0142e01c695250fc905b2d94f119b1aed7716972ef60cf6bed2d021
+    container_name: fcuk-em-all-immich-redis
+    restart: unless-stopped
+    networks: [fcuk-em-all]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  immich-postgres:
+    image: ghcr.io/immich-app/postgres@sha256:6244e923bfde05b58bc4fc26b21025415c166c6239b6b9886fb0e806dcc99001
+    container_name: fcuk-em-all-immich-postgres
+    restart: unless-stopped
+    networks: [fcuk-em-all]
+    env_file:
+      - ./secrets/immich.env
+    environment:
+      POSTGRES_INITDB_ARGS: '--data-checksums'
+    volumes:
+      - immich_pgdata:/var/lib/postgresql/data
+    shm_size: 128mb
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+networks:
+  fcuk-em-all:
+    external: true
+volumes:
+  immich_pgdata:
+  immich_upload:
+  immich_modelcache:

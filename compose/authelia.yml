@@ -1,0 +1,48 @@
+# compose/authelia.yml - FCUK-EM-ALL SSO/MFA engine (SHARED-NETWORK migration).
+# Off network_mode:host onto the external 'fcuk-em-all' network; bound 0.0.0.0:9091
+# inside the isolated network (reached by Caddy as authelia:9091, not host-exposed).
+# Image pinned by ARM64 manifest DIGEST (law 4). Secrets via *_FILE env.
+services:
+  authelia:
+    image: authelia/authelia@sha256:68277b28658a69bb3f512c2c23c41c7df7d9311d0e506e64e26c96dcd75d0539
+    container_name: fcuk-em-all-authelia
+    restart: unless-stopped
+    networks: [fcuk-em-all]
+    volumes:
+      # Phase 3 (2026-07-02): mount the WHOLE config dir, NOT individual files, so
+      # authentication_backend.file.watch (inotify) reliably detects in-place writes
+      # to users_database.yml made by the wizard. A single-file bind mount does NOT
+      # propagate IN_MODIFY to the container watcher (verified: watch never fired);
+      # a directory bind mount does. configuration.yml + users_database.yml both live
+      # in templates/authelia, so /config resolves the same paths as before.
+      - ./templates/authelia:/config:ro
+      - ./secrets:/secrets:ro
+      - authelia_data:/data
+      # TOTP/reset notifications land on a HOST path (reachable by the appliance
+      # owner via SSH), not inside the anonymous authelia_data volume. There is no
+      # email/SMS on this box, so the filesystem notifier is the correct mechanism;
+      # this just makes its output actually retrievable.  (Part 4)
+      - ./state/authelia:/notifications
+    environment:
+      AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET_FILE: /secrets/authelia_jwt_secret
+      AUTHELIA_SESSION_SECRET_FILE: /secrets/authelia_session_secret
+      AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE: /secrets/authelia_storage_encryption_key
+      # OIDC provider secrets (hmac_secret, jwks key, per-client secrets) are inlined
+      # in the RENDERED configuration.yml, which is gitignored for exactly this reason
+      # (same posture as users_database.yml). Authelia does NOT support _FILE injection
+      # for nested/indexed OIDC keys (jwks[].key, clients[].client_secret), so those
+      # must live in the config file itself. Source-of-truth copies stay in secrets/.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:9091/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 8s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+networks:
+  fcuk-em-all:
+    external: true
+volumes:
+  authelia_data:

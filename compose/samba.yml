@@ -1,0 +1,46 @@
+# compose/samba.yml - FCUK-EM-ALL SMB drop-zone share (29.sh).
+# ghcr.io/servercontainers/samba, pinned by ARM64 manifest DIGEST (law 4; amd64
+# re-resolves). Five shares -> /srv/media/dropzone/* (the only read-write media
+# area). Published 139/445 are restricted to LAN+tailnet+loopback by the
+# DOCKER-USER allowlist (15.sh, extended by 29.sh) - NOT exposed to 0.0.0.0 in
+# any reachable sense. A single account (SMB_USER, default 'media'; UID 1100)
+# whose password lives in secrets/smb.env (0600), never in this file. mDNS/WSDD
+# disabled (not needed; mount the shares by IP).
+services:
+  samba:
+    image: ghcr.io/servercontainers/samba@sha256:f608b5c5a045a012eb40a15c697dcca2ec19bf779ea47e74af03a1689836c797
+    container_name: fcuk-em-all-samba
+    restart: unless-stopped
+    networks: [fcuk-em-all]
+    ports:
+      - "445:445"
+      - "139:139"
+    env_file:
+      - ./secrets/smb.env
+    environment:
+      TZ: "UTC"
+      AVAHI_DISABLE: "1"
+      WSDD2_DISABLE: "1"
+      SAMBA_VOLUME_CONFIG_media: "[media]; path=/shares/media; valid users = ${SMB_USER:-media}; read only = no; browseable = yes; guest ok = no; create mask = 0664; directory mask = 0775"
+      SAMBA_VOLUME_CONFIG_music: "[music]; path=/shares/music; valid users = ${SMB_USER:-media}; read only = no; browseable = yes; guest ok = no; create mask = 0664; directory mask = 0775"
+      SAMBA_VOLUME_CONFIG_books: "[books]; path=/shares/books; valid users = ${SMB_USER:-media}; read only = no; browseable = yes; guest ok = no; create mask = 0664; directory mask = 0775"
+      SAMBA_VOLUME_CONFIG_audiobooks: "[audiobooks]; path=/shares/audiobooks; valid users = ${SMB_USER:-media}; read only = no; browseable = yes; guest ok = no; create mask = 0664; directory mask = 0775"
+      SAMBA_VOLUME_CONFIG_photos: "[photos]; path=/shares/photos; valid users = ${SMB_USER:-media}; read only = no; browseable = yes; guest ok = no; create mask = 0664; directory mask = 0775"
+    volumes:
+      - /srv/media/dropzone/media:/shares/media
+      - /srv/media/dropzone/music:/shares/music
+      - /srv/media/dropzone/books:/shares/books
+      - /srv/media/dropzone/audiobooks:/shares/audiobooks
+      - /srv/media/dropzone/photos:/shares/photos
+    healthcheck:
+      test: ["CMD", "/container/scripts/docker-healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+networks:
+  fcuk-em-all:
+    external: true

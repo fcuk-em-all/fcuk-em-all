@@ -1,0 +1,26 @@
+{
+  "_comment": "FCUK-EM-ALL runtime contract. Copy this file to config.json (which is gitignored) and fill in your values before running bootstrap.sh. Replace every YOUR_* placeholder. config.json is never committed, so a real NordVPN token / DNS API key here stays local — but you may instead leave those blank and place them in secrets/ (see secrets/README.md).",
+
+  "domain": "YOUR_DOMAIN_OR_fcuk-em-all.com",
+  "tls_mode": "local",
+  "_tls_mode_help": "'local' = self-signed certs + hosts-file entries for *.<domain> -> 127.0.0.1 (no public DNS needed). 'domain' = real ACME certs; requires a domain you control plus dns_provider + dns_api_key below.",
+
+  "storage_path": "/srv/media",
+  "timezone": "America/New_York",
+  "admin_email": "YOUR_EMAIL_HERE",
+
+  "modules": ["core"],
+  "_modules_help": "'core' (always required) = Jellyfin, Navidrome, Kavita, Audiobookshelf, Immich, Authelia, Caddy, wizard. Add 'arr' for the request/download stack (Radarr, Sonarr, Jellyseerr, Prowlarr, qBittorrent, FlareSolverr). Add 'vpn' (requires 'arr') to route the download stack through NordVPN. Example: [\"core\",\"arr\",\"vpn\"].",
+
+  "nordvpn_token": "YOUR_NORDVPN_TOKEN_IF_VPN_MODULE_ENABLED",
+  "dns_provider": "YOUR_DNS_PROVIDER_IF_DOMAIN_TLS_MODE",
+  "dns_api_key": "YOUR_DNS_API_KEY_IF_DOMAIN_TLS_MODE",
+
+  "preflight": {
+    "_comment": "Minimum host resources checked before install. Immich is RAM-hungry; its DB must sit on a real filesystem.",
+    "min_ram_mb": 2048,
+    "min_free_disk_gb": 20,
+    "immich_min_ram_mb": 6144,
+    "immich_db_filesystems": ["ext4", "xfs", "btrfs", "zfs"]
+  }
+}

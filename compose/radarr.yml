@@ -1,0 +1,30 @@
+# compose/radarr.yml - movie automation (Ep4 Pass4a). Internal :7878 only. Root folder
+# /movies -> /srv/media/movies; downloads shared with qBittorrent for hardlink imports.
+services:
+  radarr:
+    image: lscr.io/linuxserver/radarr@sha256:72552c86d8361e48e2b12419b03389da140e06f63a366eff98f56eed1adb291e
+    container_name: fcuk-em-all-radarr
+    restart: unless-stopped
+    networks: [fcuk-em-all]
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: "UTC"
+    volumes:
+      - radarr_config:/config
+      - /srv/media/movies:/movies:rw
+      - /srv/media/downloads:/downloads:rw
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:7878/ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+networks:
+  fcuk-em-all:
+    external: true
+volumes:
+  radarr_config:

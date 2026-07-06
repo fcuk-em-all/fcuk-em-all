@@ -1,0 +1,28 @@
+# compose/prowlarr.yml - indexer manager (Ep4 Pass4a). Routed through the NordVPN tunnel:
+# joins gluetun's netns (network_mode: container:fcuk-em-all-gluetun), same as qBittorrent,
+# so all indexer traffic egresses via the VPN and gluetun's kill switch covers it. Reachable
+# as fcuk-em-all-gluetun:9696 (its own 'prowlarr' alias is GONE). No depends_on: gluetun is a
+# separate compose file - operational ordering (gluetun healthy first, then recreate) applies.
+services:
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr@sha256:34ab5737d42378f9dec6bb4f3452b43cb912ff000eccd87dbbb994fdc902c103
+    container_name: fcuk-em-all-prowlarr
+    restart: unless-stopped
+    network_mode: "container:fcuk-em-all-gluetun"
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: "UTC"
+    volumes:
+      - prowlarr_config:/config
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9696/ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+volumes:
+  prowlarr_config:

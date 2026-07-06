@@ -1,0 +1,33 @@
+# compose/jellyfin.yml - FCUK-EM-ALL video (Jellyfin), behind the Caddy gate.
+# On the external 'fcuk-em-all' network, fronted by Caddy as jellyfin:8096.
+# Image pinned by ARM64 manifest DIGEST (law 4; amd64 re-resolves).
+# CPU-ONLY this pass: hardware/QSV transcode is the honest arm64 deferral - the
+# config path is built, the hardware transcode is NOT exercised here. Media
+# library mounts (read-only) are deferred to a later library pass.
+services:
+  jellyfin:
+    image: jellyfin/jellyfin@sha256:7536c1009c6ea50dadd2b244165efb357504ca0f2670abefbceb1c773cc7e13d
+    container_name: fcuk-em-all-jellyfin
+    restart: unless-stopped
+    networks: [fcuk-em-all]
+    environment:
+      JELLYFIN_PublishedServerUrl: https://jellyfin.stream.local
+    volumes:
+      - jellyfin_config:/config
+      - jellyfin_cache:/cache
+      - /srv/media:/media:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8096/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+networks:
+  fcuk-em-all:
+    external: true
+volumes:
+  jellyfin_config:
+  jellyfin_cache:

@@ -1,0 +1,24 @@
+# compose/flaresolverr.yml - CloudFlare-challenge solver for Prowlarr (Ep4 Pass4b).
+# Routed through the NordVPN tunnel: joins gluetun's netns (network_mode:
+# container:fcuk-em-all-gluetun), same as qBittorrent + Prowlarr, so its egress goes via the
+# VPN and gluetun's kill switch covers it. Prowlarr (co-located in the same netns) reaches it
+# at http://localhost:8191/ - the 'flaresolverr' network alias is GONE. No depends_on: gluetun
+# is a separate compose file - operational ordering (gluetun healthy first, then recreate).
+services:
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr@sha256:96ea0bb7b589785f802bf586b00440ca96bfa12b27c3a6a69f0077ef5300fa31
+    container_name: fcuk-em-all-flaresolverr
+    restart: unless-stopped
+    network_mode: "container:fcuk-em-all-gluetun"
+    environment:
+      LOG_LEVEL: "info"
+      TZ: "UTC"
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8191/health').status==200 else 1)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }

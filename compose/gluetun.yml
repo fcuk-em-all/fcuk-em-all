@@ -1,0 +1,48 @@
+# compose/gluetun.yml - NordVPN WireGuard VPN gateway (Ep4 Pass5; extended to Prowlarr +
+# FlareSolverr). qBittorrent, Prowlarr, AND FlareSolverr all join THIS container's netns
+# (network_mode: container:fcuk-em-all-gluetun), so ALL their traffic egresses through the
+# tunnel and Gluetun's firewall is the kill switch for all three (default on: no egress
+# outside the tunnel; if the tunnel drops, traffic is blocked).
+# WIREGUARD_PRIVATE_KEY (gluetun.env) is derived from the NordVPN access token via
+# api.nordvpn.com - Gluetun's NordVPN WireGuard requires the KEY, not the raw token.
+# Published + firewall-opened here (reachable as gluetun:<port> on the fcuk-em-all net):
+#   8080 qBittorrent WebUI, 9696 Prowlarr. 8191 FlareSolverr is published too but is only
+#   consumed by Prowlarr via localhost inside the shared netns (co-located).
+services:
+  gluetun:
+    image: ghcr.io/qdm12/gluetun@sha256:3ad0ad5e0ba7c919f7ae6131ae1510f37a28836f5b337144d8d399f27cbb4146
+    container_name: fcuk-em-all-gluetun
+    restart: unless-stopped
+    networks: [fcuk-em-all]
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    ports:
+      - "8080:8080"
+      - "9696:9696"
+      - "8191:8191"
+    environment:
+      VPN_SERVICE_PROVIDER: "nordvpn"
+      VPN_TYPE: "wireguard"
+      SERVER_COUNTRIES: "United States"
+      SERVER_CATEGORIES: "P2P"
+      FIREWALL_INPUT_PORTS: "8080,9696,8191"
+      FIREWALL_OUTBOUND_SUBNETS: "172.21.0.0/16"
+      TZ: "UTC"
+    env_file:
+      - compose/gluetun.env
+    healthcheck:
+      test: ["CMD", "/gluetun-entrypoint", "healthcheck"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 45s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+networks:
+  fcuk-em-all:
+    external: true

@@ -1,0 +1,39 @@
+# compose/wizard.yml - FCUK-EM-ALL Control Plane. Two-stage image from wizard/Dockerfile,
+# reached by Caddy as wizard:8088. Secrets via env_file (wizard.env, gitignored, 0600).
+# user 1100:1100 (dropzone owner). Mounts:
+#   /srv/media:rw                         - HOME disk stats + DISCOVER downloads
+#   ./state/wizard:/app/state/wizard:rw   - pending_reset.json + users_database backups (Phase 3)
+#   ./templates/authelia/users_database.yml:/app/authelia/users_database.yml:rw
+#         - Phase 3 writes the Authelia user DB IN-PLACE (same inode Authelia mounts :ro),
+#           picked up by Authelia's authentication_backend.file.watch: true.
+services:
+  wizard:
+    build:
+      context: ./wizard
+      dockerfile: Dockerfile
+    image: fcuk-em-all/wizard:local
+    container_name: fcuk-em-all-wizard
+    restart: unless-stopped
+    user: "1100:1100"
+    networks: [fcuk-em-all]
+    env_file:
+      - compose/wizard.env
+    volumes:
+      - /srv/media:/srv/media:rw
+      # Relative paths resolve against PROJECT_ROOT (bootstrap runs compose with
+      # --project-directory=PROJECT_ROOT), so repo-root paths use ./ and the
+      # env_file (which lives in compose/) is compose/wizard.env.
+      - ./state/wizard:/app/state/wizard:rw
+      - ./templates/authelia/users_database.yml:/app/authelia/users_database.yml:rw
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8088/health').status==200 else 1)"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 8s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+networks:
+  fcuk-em-all:
+    external: true

@@ -1,0 +1,21 @@
+diff --git a/server/middleware/auth.ts b/server/middleware/auth.ts
+index 326d460..76c479b 100644
+--- a/server/middleware/auth.ts
++++ b/server/middleware/auth.ts
+@@ -27,6 +27,16 @@ export const checkUser: Middleware = async (req, _res, next) => {
+     user = await userRepository.findOne({
+       where: { id: req.session.userId },
+     });
++  } else if (req.headers['remote-user']) {
++    const userRepository = getRepository(User);
++
++    user = await userRepository.findOne({
++      where: { jellyfinUsername: req.headers['remote-user'] as string },
++    });
++
++    if (user && req.session) {
++      req.session.userId = user.id;
++    }
+   }
+ 
+   if (user) {

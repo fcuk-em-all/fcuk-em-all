@@ -1,0 +1,30 @@
+# compose/sonarr.yml - TV automation (Ep4 Pass4a). Internal :8989 only. Root folder
+# /shows -> /srv/media/shows; downloads shared with qBittorrent for hardlink imports.
+services:
+  sonarr:
+    image: lscr.io/linuxserver/sonarr@sha256:24ceb7c6ef9dd048e1033ed67359d08aac510d8b5f6de8a85cac67b964671f1d
+    container_name: fcuk-em-all-sonarr
+    restart: unless-stopped
+    networks: [fcuk-em-all]
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: "UTC"
+    volumes:
+      - sonarr_config:/config
+      - /srv/media/shows:/shows:rw
+      - /srv/media/downloads:/downloads:rw
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8989/ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+networks:
+  fcuk-em-all:
+    external: true
+volumes:
+  sonarr_config:

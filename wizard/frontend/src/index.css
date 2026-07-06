@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root { color-scheme: dark; }
+  html, body, #root { height: 100%; }
+  body { margin: 0; background: #0A0B0C; }
+  * { box-sizing: border-box; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: #0A0B0C; }
+  ::-webkit-scrollbar-thumb { background: #2a2d30; border: 1px solid #0a0b0c; }
+}
+
+@layer components {
+  /* base radial backdrop from the reference HOME screen */
+  .app-bg {
+    background-color: theme('colors.base');
+    background-image: radial-gradient(circle at 50% 0%, #131517 0%, #0a0b0c 60%);
+  }
+  /* vertical hazard tape - sidebar right edge (6px wide, 50% opacity applied inline via w + opacity util) */
+  .hazard-v {
+    background: repeating-linear-gradient(180deg, theme('colors.accent') 0 14px, theme('colors.hazardDark') 14px 28px);
+    opacity: .5;
+  }
+  .hazard-h {
+    background: repeating-linear-gradient(45deg, theme('colors.accent') 0 16px, theme('colors.hazardDark') 16px 32px);
+  }
+  /* segmented storage gauge fill (NOT a <progress>) */
+  .gauge-fill {
+    background: repeating-linear-gradient(90deg, theme('colors.accent') 0 6px, theme('colors.screen') 6px 8px);
+  }
+  /* grain overlay - fractalNoise SVG, exact technique from the reference */
+  .grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: .05;
+    mix-blend-mode: overlay;
+    z-index: 50;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/></svg>");
+  }
+  /* corner-bracket L-marks - 8 layered gradients (14px counters / 16px panels) */
+  .corners { position: absolute; inset: 0; pointer-events: none; }
+  .corners-14 {
+    background:
+      linear-gradient(#ffffff26, #ffffff26) top left / 14px 2px no-repeat,
+      linear-gradient(#ffffff26, #ffffff26) top left / 2px 14px no-repeat,
+      linear-gradient(#ffffff26, #ffffff26) top right / 14px 2px no-repeat,
+      linear-gradient(#ffffff26, #ffffff26) top right / 2px 14px no-repeat,
+      linear-gradient(#ffffff26, #ffffff26) bottom left / 14px 2px no-repeat,
+      linear-gradient(#ffffff26, #ffffff26) bottom left / 2px 14px no-repeat,
+      linear-gradient(#ffffff26, #ffffff26) bottom right / 14px 2px no-repeat,
+      linear-gradient(#ffffff26, #ffffff26) bottom right / 2px 14px no-repeat;
+  }
+  .corners-16 {
+    background:
+      linear-gradient(#ffffff26, #ffffff26) top left / 16px 2px no-repeat,
+      linear-gradient(#ffffff26, #ffffff26) top left / 2px 16px no-repeat,
+      linear-gradient(#ffffff26, #ffffff26) bottom right / 16px 2px no-repeat,
+      linear-gradient(#ffffff26, #ffffff26) bottom right / 2px 16px no-repeat;
+  }
+}

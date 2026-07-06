@@ -1,0 +1,44 @@
+# compose/caddy.yml - FCUK-EM-ALL edge proxy (SHARED-NETWORK migration).
+# Migrated off network_mode:host onto the external 'fcuk-em-all' network; now
+# publishes :80/:443 to the host and reaches services by name (authelia:9091,
+# jellyfin:8096) and the wizard (wizard:8088) - all by service name.
+# Image pinned by ARM64 manifest DIGEST (law 4). tls internal dev seam.
+services:
+  caddy:
+    image: caddy@sha256:1172d4213087d3fc30bafc7ff2c2896180eb0c41ff7f75f315568fb36cabdcba
+    container_name: fcuk-em-all-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      # Network alias so the OTHER containers can resolve the OIDC issuer hostname
+      # (auth.<domain>) internally -> Caddy -> Authelia. The public DNS name is
+      # NXDOMAIN inside the docker network, which would break server-side OIDC
+      # (discovery/token/userinfo) for Jellyfin/Immich/ABS/Kavita. Caddy serves the
+      # auth.<domain> site by SNI with the trusted wildcard cert. SF_BASE_DOMAIN is
+      # exported by bootstrap.sh and/or the root .env (see .env.example).
+      fcuk-em-all:
+        aliases:
+          - auth.${SF_BASE_DOMAIN:-fcuk-em-all.com}
+    volumes:
+      - ./templates/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+      - ./secrets/tls/fullchain.cer:/etc/caddy/tls/fullchain.cer:ro
+      - ./secrets/tls/${SF_BASE_DOMAIN:-fcuk-em-all.com}.key:/etc/caddy/tls/${SF_BASE_DOMAIN:-fcuk-em-all.com}.key:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:80/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+networks:
+  fcuk-em-all:
+    external: true
+volumes:
+  caddy_data:
+  caddy_config:

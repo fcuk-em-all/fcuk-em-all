@@ -1,0 +1,8 @@
+# Keep the build context tiny + reproducible: host-only + build artifacts.
+.venv
+__pycache__
+*.pyc
+run.sh
+design-ref
+frontend/node_modules
+frontend/dist

@@ -1,0 +1,24 @@
+name: ShellCheck
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  shellcheck:
+    name: Lint shell scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          severity: warning
+          # Numbered build scripts ([0-9]*.sh) are gitignored and never in the
+          # repo; secrets/, scratchpad/, wizard-ext/, backups/, and state/ are
+          # excluded from the scan.
+          ignore_paths: scratchpad wizard-ext backups state
+          ignore_names: >-
+            0.sh 1.sh 2.sh 3.sh 4.sh 5.sh 6.sh 7.sh 8.sh 9.sh

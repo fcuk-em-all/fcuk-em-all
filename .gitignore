@@ -1,0 +1,76 @@
+# ─────────────────────────────────────────────────────────────
+#  FCUK-EM-ALL — .gitignore
+#  Nothing sensitive or machine-specific ever enters version control.
+# ─────────────────────────────────────────────────────────────
+
+# User configuration (generated from config.example.json at setup)
+config.json
+
+# Secrets — generated on first run, NEVER committed.
+# Only the generator and the directory README are tracked.
+secrets/*
+!secrets/generate.sh
+!secrets/README.md
+
+# Rendered runtime configs that carry a live domain and/or secret
+# material. Cleaned *.example templates are tracked instead.
+templates/authelia/configuration.yml
+templates/authelia/users_database.yml
+
+# Numbered build scripts — build/execution vehicles, never source
+[0-9]*.sh
+
+# Internal session state / operator docs / tooling — not part of the product
+.cc-state.md
+CLAUDE.md
+.claude/
+
+# Backup files
+*.bak
+*.bak-ep*
+*.bak-*
+*.backup
+
+# Runtime state and logs
+state/
+backups/
+appdata/
+*.log
+*.tmp
+
+# Personal content
+sample-media/
+
+# Working / build-output directories
+scratchpad/
+wizard-ext/
+*.zip
+
+# Design reference (internal scratch)
+wizard/design-ref/
+
+# Frontend build artifacts
+wizard/frontend/dist/
+wizard/frontend/node_modules/
+wizard/frontend/.vite/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# macOS
+.DS_Store
+
+# Private keys / certificates (e.g. the EC2 SSH key fcuk-em-all.pem). Never commit.
+*.pem
+
+# Environment files. The root .env is the compose-var anchor (bootstrap also
+# exports SF_BASE_DOMAIN). compose/*.env carry secrets (VPN token, wizard creds)
+# and must never be committed; secrets/*.env are covered by 'secrets/*' above.
+/.env
+compose/*.env
+!*.env.example
+
+# Rendered Caddyfile (produced by lib/configure.sh; domain-specific)
+templates/Caddyfile.dev

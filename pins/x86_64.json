@@ -1,0 +1,164 @@
+{
+  "arch": "x86_64",
+  "note": "linux/amd64 manifest digests resolved via 'docker manifest inspect' from the tags in pins/arm64.json. Versioned tags pair 1:1 with the arm64 pins; ':latest' tags are volatile so the two arches' pins may reflect different snapshots (the digest is the law). The docker-compose binary sha256 must be verified against docker-compose-linux-x86_64 on the amd64 host.",
+  "images": {
+    "caddy": {
+      "tag": "caddy:2.11.4",
+      "digest": "sha256:98eb57d882ccd5213d1688764db10c1ca2c58a1ca3a6717a3411ad798f7a423a",
+      "recorded_at": "2026-07-04T22:55:18Z"
+    },
+    "authelia": {
+      "tag": "authelia/authelia:4.39.20",
+      "digest": "sha256:b5f415d5f14b154c2aa2b186d9f329d879e223da36e115cd871db4c261d5af54",
+      "recorded_at": "2026-07-04T23:06:05Z"
+    },
+    "jellyfin": {
+      "tag": "jellyfin/jellyfin:10.11.11",
+      "digest": "sha256:0b901391a662862eddb5dc55d244d7883cbb6236ef5b9a6ea82abc78a89819f0",
+      "recorded_at": "2026-07-04T02:12:23Z",
+      "note": "upgraded 10.10.7 -> 10.11.11 (EF Core migration library.db->jellyfin.db); arm64 manifest digest; amd64 re-resolves"
+    },
+    "navidrome": {
+      "tag": "deluan/navidrome:0.62.0",
+      "digest": "sha256:6f597ad2238475c63b2d43b835ea8db99dd7ff669029b0557132341270521ce8",
+      "recorded_at": "2026-07-04T23:14:40Z"
+    },
+    "kavita": {
+      "tag": "linuxserver/kavita:v0.9.0.2-ls114",
+      "digest": "sha256:c6b647bc98018683763fd47b57e81853c7c63bed87668bff439b3e73b71e6073",
+      "recorded_at": "2026-07-04T02:12:23Z",
+      "note": "upgraded 0.8.7 -> 0.9.0.2 (Kavita OIDC/SSO added upstream in v0.8.8) for SSO Phase 1. STAYED in the LinuxServer family (config volume /config layout + PUID/PGID preserved); the official ghcr.io/kareadita/kavita uses /kavita/config + a different user model, so a family switch would be a risky cross-layout DB migration. arm64 manifest digest; amd64 re-resolves."
+    },
+    "audiobookshelf": {
+      "tag": "ghcr.io/advplyr/audiobookshelf:2.35.1",
+      "digest": "sha256:54a0f832278d5fbc10a038cfb9da26f227dfc6fa054f645699dbfa0ff0b97502",
+      "recorded_at": "2026-07-04T23:25:38Z"
+    },
+    "immich_server": {
+      "tag": "ghcr.io/immich-app/immich-server:v3.0.1",
+      "digest": "sha256:dd5962944099b9302243cf59a1d41a69eca4e1c0afd8bb82774447eb158f6102",
+      "recorded_at": "2026-07-04T23:53:07Z",
+      "note": "immich (heavy/conditional)"
+    },
+    "immich_machine_learning": {
+      "tag": "ghcr.io/immich-app/immich-machine-learning:v3.0.1",
+      "digest": "sha256:c0cdff4a0c767fa26b51995157a8b92cc6a79ba68e5b7ec38dfef249168a4139",
+      "recorded_at": "2026-07-04T23:53:07Z",
+      "note": "immich (heavy/conditional)"
+    },
+    "immich_redis": {
+      "tag": "docker.io/valkey/valkey:9",
+      "digest": "sha256:e30fbdc8d6d6b355712e50f4008321026f69db3e450254b4f0008d22745d8d0e",
+      "recorded_at": "2026-07-04T02:12:23Z",
+      "note": "immich (heavy/conditional)"
+    },
+    "immich_postgres": {
+      "tag": "ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0",
+      "digest": "sha256:b1d33572a9a0634aa6d344077467ad32847812a37fa3859f702952cba22a2f55",
+      "recorded_at": "2026-07-04T02:12:23Z",
+      "note": "immich (heavy/conditional)"
+    },
+    "samba": {
+      "tag": "ghcr.io/servercontainers/samba:latest",
+      "digest": "sha256:75bee836c2e05bbb2b0d1552c074b4b9d154250272c287ddf8d11947fe9db5d8",
+      "recorded_at": "2026-07-04T02:12:23Z",
+      "note": "SMB drop-zone share (29.sh). env-driven multi-share (ACCOUNT_*/SAMBA_VOLUME_CONFIG_*); arm64 manifest digest, amd64 re-resolves. ':latest' tag is volatile - digest is the law."
+    },
+    "qbittorrent": {
+      "tag": "lscr.io/linuxserver/qbittorrent:latest",
+      "digest": "sha256:193f1a137739e8487239355e655a547093aaa963b8ed801d944bc3b98697fe38",
+      "recorded_at": "2026-07-04T02:12:23Z",
+      "note": "Ep4 Pass4a arr-stack + Jellyseerr. arm64 manifest digest; amd64 re-resolves. ':latest' volatile - digest is the law."
+    },
+    "prowlarr": {
+      "tag": "lscr.io/linuxserver/prowlarr:latest",
+      "digest": "sha256:d26d9710f4b77072dc4eda387d2cfc677bcaab91e5d0ba1b7b02414c2640a832",
+      "recorded_at": "2026-07-04T02:12:23Z",
+      "note": "Ep4 Pass4a arr-stack + Jellyseerr. arm64 manifest digest; amd64 re-resolves. ':latest' volatile - digest is the law."
+    },
+    "radarr": {
+      "tag": "lscr.io/linuxserver/radarr:latest",
+      "digest": "sha256:4b31df0a031b00cc8c4b55cc500beb41b1eed3d29cb4eb15f54c75695a6b41d3",
+      "recorded_at": "2026-07-04T02:12:23Z",
+      "note": "Ep4 Pass4a arr-stack + Jellyseerr. arm64 manifest digest; amd64 re-resolves. ':latest' volatile - digest is the law."
+    },
+    "sonarr": {
+      "tag": "lscr.io/linuxserver/sonarr:latest",
+      "digest": "sha256:16afe738a50916edc3740744ea7390e7ff6665864bef5778fbebb45d4f356865",
+      "recorded_at": "2026-07-04T02:12:23Z",
+      "note": "Ep4 Pass4a arr-stack + Jellyseerr. arm64 manifest digest; amd64 re-resolves. ':latest' volatile - digest is the law."
+    },
+    "jellyseerr": {
+      "tag": "fallenbagel/jellyseerr:latest",
+      "digest": "sha256:499fbe958fa4a0c93172a231c14898986556bb28bd5cd569a0f41dbf887b04d7",
+      "recorded_at": "2026-07-04T02:12:23Z",
+      "note": "Ep4 Pass4a arr-stack + Jellyseerr. arm64 manifest digest; amd64 re-resolves. ':latest' volatile - digest is the law."
+    },
+    "flaresolverr": {
+      "tag": "ghcr.io/flaresolverr/flaresolverr:latest",
+      "digest": "sha256:258523d25e4e07028c3a206f0e03ae807b26a50a201dd320f09a18464ecf86fa",
+      "recorded_at": "2026-07-04T02:12:23Z",
+      "note": "Ep4 Pass4b CloudFlare-bypass proxy for Prowlarr (1337x/EZTV). INTERNAL ONLY - no public subdomain. arm64 manifest digest; amd64 re-resolves."
+    },
+    "gluetun": {
+      "tag": "ghcr.io/qdm12/gluetun:latest",
+      "digest": "sha256:6b7e41ac1005d5f060de67cbd268883ca90d43c7c231112639c0e7601dd5c0a3",
+      "recorded_at": "2026-07-04T02:12:23Z",
+      "note": "Ep4 Pass5 NordVPN WireGuard gateway for qBittorrent. arm64 manifest digest; amd64 re-resolves. ':latest' volatile - digest is the law."
+    }
+  },
+  "binaries": {
+    "docker-compose": {
+      "version": "v5.1.4",
+      "asset": "docker-compose-linux-x86_64",
+      "sha256": "RESOLVE_ON_AMD64_HOST",
+      "installed_path": "/usr/local/lib/docker/cli-plugins/docker-compose",
+      "note": "sha256 intentionally unresolved on the arm64 dev box: verify against the linux/x86_64 release asset on the amd64 appliance.",
+      "recorded_at": "2026-07-04T02:12:23Z"
+    }
+  },
+  "built_images": {
+    "wizard": {
+      "kind": "built-locally",
+      "source": "wizard/ (our own app.py + pinned requirements.txt) - NOT a registry pull",
+      "local_tag": "fcuk-em-all/wizard:local",
+      "base_image": "python:3.13-slim",
+      "base_digest": "sha256:af5bd286051a06b38587d30a8638958f4a2f38381aa80fe859c740af3411bd4d",
+      "frontend_build_base_image": "node:20-alpine",
+      "frontend_build_base_digest": "sha256:afdf98210b07b586eb71fa22ba2e432e058e4cd1304d31ed60888755b8c865fb",
+      "note": "Pinned input is the base-image digest. amd64 appliance re-resolves the linux/amd64 base digest. Phase 1 (34.sh) added a two-stage build: node:20-alpine (frontend_build_base) compiles the Vite/React SPA; the python:3.13-slim runtime serves dist/ + the /api layer. Both digests are arm64 manifest digests; amd64 re-resolves. [x86_64: base digests re-resolved to linux/amd64 this pass; local rebuild still required.]",
+      "recorded_at": "2026-07-04T02:12:23Z",
+      "frontend_recorded_at": "2026-07-01T17:50:00Z"
+    },
+    "jellyseerr_patched": {
+      "kind": "built-locally",
+      "source": "wizard-ext/jellyseerr (Fallenbagel/jellyseerr v2.7.3 + 1 else-if patch to server/middleware/auth.ts) - NOT a registry pull",
+      "local_tag": "fcuk-em-all/jellyseerr:sso-patch",
+      "image_id": "sha256:598d5fe8e06bc5b428de732d37dfbab7e009280e5a6ab7af2e06dc53251fe8dc",
+      "base_image": "node:22-alpine",
+      "patch": "checkUser reads Remote-User header -> auto-auth matching jellyfinUsername (Ep4 trusted-header SSO). Build is pnpm@9 (upstream toolchain), arm64-native; amd64 appliance re-resolves node:22-alpine + rebuilds.",
+      "recorded_at": "2026-07-04T02:12:23Z",
+      "base_digest_amd64": "sha256:b74031e546d7f4faf561d797ac1b76beccac856a042815ca77db4fd047581605",
+      "note": " [x86_64: base digests re-resolved to linux/amd64 this pass; local rebuild still required.]"
+    }
+  },
+  "plugin_repositories": [
+    {
+      "name": "Editors Choice (lachlandcp)",
+      "url": "https://raw.githubusercontent.com/lachlandcp/jellyfin-editors-choice-plugin/main/manifest.json"
+    },
+    {
+      "name": "HoverTrailer (Fovty)",
+      "url": "https://raw.githubusercontent.com/Fovty/HoverTrailer/master/manifest.json"
+    }
+  ],
+  "sideloaded_plugins": {
+    "Intro Skipper": {
+      "version": "1.10.11.21",
+      "guid": "c83d86bb-a1e0-4c35-a113-e2101cf4ee6b",
+      "zip_url": "https://github.com/intro-skipper/intro-skipper/releases/download/10.11/v1.10.11.21/intro-skipper-v1.10.11.21.zip",
+      "sha256": "eb63a7980dac7c7f2e63364bb75d4f9bc0948dead2fcab51fd6ab04dca1c93b0",
+      "reason": "upstream manifest host redirecting to HTML; sideloaded release zip"
+    }
+  }
+}
