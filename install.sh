@@ -152,8 +152,8 @@ check_system() {
   disk_kb="$(printf '%s\n' "$disk_df" | awk 'NR==2{print $4; exit}')"
   disk_mount="$(printf '%s\n' "$disk_df" | awk 'NR==2{print $6; exit}')"
   disk_gb=$(( disk_kb / 1024 / 1024 ))
-  if [ "$disk_gb" -lt 50 ]; then
-    die "insufficient free disk on ${disk_mount} (Docker data root): ${disk_gb} GB (need >= 50 GB; 100 GB+ recommended)."
+  if [ "$disk_gb" -lt 20 ]; then
+    die "insufficient free disk on ${disk_mount} (Docker data root): ${disk_gb} GB (need >= 20 GB; 100 GB+ recommended)."
   elif [ "$disk_gb" -lt 100 ]; then
     warn "free disk on ${disk_mount} (Docker data root): ${disk_gb} GB - below the recommended 100 GB; continuing."
   else
