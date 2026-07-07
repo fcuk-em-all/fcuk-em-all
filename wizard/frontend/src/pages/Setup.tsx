@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { COLORS } from '../tokens'
 import {
   validateStorage, getStorageRequirements, configureLocalTls, configureDomainTls, createAdmin,
-  configureModules, totpEnroll, verifyTotp, completeSetup,
-  type StorageCheck, type StorageRequirements, type PropRow, type TotpEnroll,
+  configureModules, completeSetup,
+  type StorageCheck, type StorageRequirements, type PropRow,
 } from '../api'
 
 // Colors mirror tokens.ts; accent/status literals are local to this one-off screen.
@@ -12,7 +12,7 @@ const ACCENT = '#E8B23A'
 const DANGER = '#C7443A'
 const OK = '#5FA463'
 
-const STEPS = ['WELCOME', 'STORAGE', 'DOMAIN', 'ADMIN', 'MODULES', 'TWO-FACTOR', 'READY'] as const
+const STEPS = ['WELCOME', 'STORAGE', 'DOMAIN', 'ADMIN', 'MODULES', 'READY'] as const
 type StepData = {
   storage: string
   tlsMode: 'local' | 'domain'
@@ -59,8 +59,6 @@ export default function Setup({ onComplete }: { onComplete: () => void }) {
   const [storageResult, setStorageResult] = useState<StorageCheck | null>(null)
   const [storageReq, setStorageReq] = useState<StorageRequirements | null>(null)
   const [propagation, setPropagation] = useState<PropRow[] | null>(null)
-  const [totp, setTotp] = useState<TotpEnroll | null>(null)
-  const [totpCode, setTotpCode] = useState('')
 
   const set = <K extends keyof StepData>(k: K, v: StepData[K]) =>
     setData((d) => ({ ...d, [k]: v }))
@@ -71,13 +69,6 @@ export default function Setup({ onComplete }: { onComplete: () => void }) {
   useEffect(() => {
     getStorageRequirements().then(setStorageReq).catch(() => {})
   }, [])
-
-  // enrol TOTP when reaching step 6 (index 5)
-  useEffect(() => {
-    if (step === 5 && !totp) {
-      totpEnroll(data.username || 'admin').then(setTotp).catch((e) => setErr(errText(e)))
-    }
-  }, [step, totp, data.username])
 
   const go = useCallback((n: number) => { setErr(null); setStep(n) }, [])
 
@@ -98,15 +89,13 @@ export default function Setup({ onComplete }: { onComplete: () => void }) {
         if (data.password !== data.confirm) { setErr('passwords do not match'); return }
         const { data: r } = await createAdmin({ username: data.username.trim(), password: data.password, email: data.email.trim() })
         setPropagation(r.propagation ?? [])
-        if (!r.ok) { setErr('admin created but some services did not sync — review the grid'); return }
+        // Non-blocking: on a fresh install some services may not be ready yet. Show
+        // the grid and warn, but never block NEXT - the admin IS written to Authelia.
+        if (!r.ok) { console.warn('admin created; some services did not sync - see the grid') }
       } else if (step === 4) {
         const mods = ['core', ...(data.modArr ? ['arr'] : []), ...(data.modArr && data.modVpn ? ['vpn'] : [])]
         await configureModules({ modules: mods, nordvpn_token: data.modVpn ? data.nordvpnToken : undefined })
       } else if (step === 5) {
-        if (!totp) { setErr('two-factor is still loading'); return }
-        const { data: r } = await verifyTotp({ secret: totp.secret, code: totpCode })
-        if (!r.ok) { setErr(r.error || 'invalid code'); return }
-      } else if (step === 6) {
         await completeSetup()
         onComplete()
         return
@@ -119,8 +108,8 @@ export default function Setup({ onComplete }: { onComplete: () => void }) {
     }
   }
 
-  const canBack = step >= 1 && step <= 4 // steps 2-5; no back after TOTP enrolled
-  const nextLabel = step === 0 ? "LET'S GO →" : step === 6 ? 'ENTER THE VAULT →' : 'NEXT →'
+  const canBack = step >= 1 && step <= 4 // STORAGE..MODULES; no back on the final READY screen
+  const nextLabel = step === 0 ? "LET'S GO →" : step === 5 ? 'ENTER THE VAULT →' : 'NEXT →'
 
   return (
     <div className="min-h-screen font-mono flex flex-col items-center justify-center p-6"
@@ -142,13 +131,13 @@ export default function Setup({ onComplete }: { onComplete: () => void }) {
               <div className="mt-2 text-[13px] tracking-[4px]" style={{ color: '#8A8F94' }}>OWN YOUR MEDIA</div>
               <p className="mt-6 text-[13px] leading-relaxed" style={{ color: C.textPrimary }}>
                 This will set up your self-hosted media appliance — storage, how it's reached,
-                your admin account, two-factor security, and which modules to run. Seven quick steps.
+                your admin account, and which modules to run. Six quick steps.
               </p>
             </div>
           )}
 
           {step === 1 && (
-            <Field label="MEDIA STORAGE PATH" hint={storageReq ? `Where your library lives. Needs ≥${storageReq.min_free_gb} GB free and must be writable.` : 'Where your library lives. Must be writable with enough free space.'}>
+            <Field label="MEDIA STORAGE PATH" hint={`Where your library lives. Needs ≥${storageResult?.min_gb ?? 20} GB free and must be writable.`}>
               <div className="flex gap-2">
                 <input className="flex-1 px-3 py-2 text-[13px] outline-none" value={data.storage}
                        onChange={(e) => { set('storage', e.target.value); setStorageResult(null) }}
@@ -230,27 +219,15 @@ export default function Setup({ onComplete }: { onComplete: () => void }) {
           )}
 
           {step === 5 && (
-            <div>
-              <div className="text-[12px] mb-3" style={{ color: '#8A8F94' }}>Add this secret to your authenticator app, then enter the 6-digit code.</div>
-              <div className="p-4 text-center" style={{ background: C.bgScreen, border: `1px solid ${C.borderMid}` }}>
-                <div className="text-[10px] tracking-[2px]" style={{ color: '#8A8F94' }}>TOTP SECRET</div>
-                <div className="mt-1 text-[15px] tracking-[2px] break-all" style={{ color: ACCENT }}>{totp ? totp.secret : '…'}</div>
-                {totp && <div className="mt-2 text-[10px] break-all" style={{ color: '#6A6F74' }}>{totp.otpauth_uri}</div>}
-              </div>
-              <input inputMode="numeric" maxLength={6} placeholder="000000" value={totpCode}
-                     onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
-                     style={inputStyle} className="mt-4 w-full px-3 py-3 text-center text-[22px] tracking-[8px] outline-none" />
-            </div>
-          )}
-
-          {step === 6 && (
             <div className="space-y-2 text-[13px]">
               <div className="font-display text-[18px] tracking-[2px]" style={{ color: OK }}>SETUP COMPLETE</div>
               <Summary k="Storage" v={data.storage} />
               <Summary k="Access" v={data.tlsMode === 'local' ? 'Local mode (self-signed)' : `Domain: ${data.domain}`} />
               <Summary k="Admin" v={data.username} />
               <Summary k="Modules" v={['core', data.modArr ? 'arr' : '', data.modArr && data.modVpn ? 'vpn' : ''].filter(Boolean).join(', ')} />
-              <Summary k="Two-factor" v="Enabled (TOTP)" />
+              <div className="mt-3 text-[12px] leading-relaxed" style={{ color: ACCENT }}>
+                On first login you will be prompted to set up two-factor authentication.
+              </div>
             </div>
           )}
 

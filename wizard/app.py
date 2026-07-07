@@ -1660,29 +1660,6 @@ def _config_merge(patch: dict):
             json.dump(cfg, f, indent=2)
 
 
-def _totp_secret() -> str:
-    return _b64.b32encode(_pysecrets.token_bytes(20)).decode().rstrip("=")
-
-
-def _totp_ok(secret_b32: str, code: str, window: int = 1) -> bool:
-    try:
-        key = _b64.b32decode(secret_b32 + "=" * (-len(secret_b32) % 8), casefold=True)
-    except Exception:
-        return False
-    code = (code or "").strip().replace(" ", "")
-    if not (code.isdigit() and len(code) == 6):
-        return False
-    counter = int(time.time()) // 30
-    for off in range(-window, window + 1):
-        msg = _struct.pack(">Q", counter + off)
-        h = _hmac.new(key, msg, _hashlib.sha1).digest()
-        o = h[-1] & 0x0F
-        val = (_struct.unpack(">I", h[o:o + 4])[0] & 0x7FFFFFFF) % 1000000
-        if f"{val:06d}" == code:
-            return True
-    return False
-
-
 @app.middleware("http")
 async def _setup_gate(request: Request, call_next):
     """Before setup completes, only /api/setup/*, /api/health and the SPA are
@@ -1818,30 +1795,6 @@ def setup_configure_modules(payload: dict = Body(...)):
     _config_merge(patch)
     return {"ok": True, "modules": mods,
             "note": "module containers are brought up by bootstrap.sh on the host."}
-
-
-@app.get("/api/setup/totp-enroll")
-def setup_totp_enroll(username: str = "admin"):
-    g = _setup_guard()
-    if g:
-        return g
-    secret = _totp_secret()
-    issuer = "FCUK-EM-ALL"
-    uri = f"otpauth://totp/{issuer}:{username}?secret={secret}&issuer={issuer}&period=30&digits=6"
-    return {"secret": secret, "otpauth_uri": uri, "issuer": issuer}
-
-
-@app.post("/api/setup/verify-totp")
-def setup_verify_totp(payload: dict = Body(...)):
-    g = _setup_guard()
-    if g:
-        return g
-    secret = (payload.get("secret") or "").strip()
-    if not secret:
-        return JSONResponse({"ok": False, "error": "secret required"}, status_code=400)
-    ok = _totp_ok(secret, payload.get("code") or "")
-    return JSONResponse({"ok": ok, "error": None if ok else "invalid or expired code"},
-                        status_code=200 if ok else 400)
 
 
 @app.post("/api/setup/complete")

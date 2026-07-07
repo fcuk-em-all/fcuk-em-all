@@ -200,12 +200,6 @@ export const createAdmin = (b: { username: string; password: string; email: stri
 export const configureModules = (b: { modules: string[]; nordvpn_token?: string }) =>
   jsonReq<{ ok: boolean; modules?: string[] }>('POST', '/api/setup/configure-modules', b)
 
-export interface TotpEnroll { secret: string; otpauth_uri: string; issuer: string }
-export const totpEnroll = (username: string) =>
-  j<TotpEnroll>(`/api/setup/totp-enroll?username=${encodeURIComponent(username)}`)
-export const verifyTotp = (b: { secret: string; code: string }) =>
-  jsonReq<{ ok: boolean; error?: string | null }>('POST', '/api/setup/verify-totp', b)
-
 export const completeSetup = () =>
   jsonReq<{ ok: boolean; complete?: boolean }>('POST', '/api/setup/complete', {})
 
