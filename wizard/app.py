@@ -1204,8 +1204,11 @@ def _user_block(username, displayname, email, pw_hash, is_admin):
     return b
 
 
-async def _usersdb_apply(mutate):
+async def _usersdb_apply(mutate, allow_admin_change=False):
     # Read -> backup -> mutate -> assert admin byte-identical + >=1 admin -> in-place write
+    # allow_admin_change=True (used by first-run setup_create_admin, which legitimately
+    # REPLACES the bootstrap admin) relaxes the admin-must-not-change guards below;
+    # the ">=1 admin" and "admin still present" invariants are always enforced.
     # -> re-read verify admin present -> sleep for Authelia watch reload.
     async with _usersdb_lock:
         original = _usersdb_read()
@@ -1220,7 +1223,9 @@ async def _usersdb_apply(mutate):
         except Exception as exc:
             _log.error("usersdb backup failed: %s", exc.__class__.__name__)
         mutate(order, blocks)
-        if "admin" not in blocks or blocks["admin"] != admin_before:
+        if "admin" not in blocks:
+            raise RuntimeError("admin entry missing after mutation - abort, no write")
+        if not allow_admin_change and blocks["admin"] != admin_before:
             raise RuntimeError("admin block would change - abort, no write")
         if sum(1 for u in order if "admins" in _block_groups(blocks[u])) < 1:
             raise RuntimeError("would leave zero admins - abort")
@@ -1229,7 +1234,11 @@ async def _usersdb_apply(mutate):
             f.write(new_text)
         after = _usersdb_read()
         _p2, _o2, b2 = _usersdb_split(after)
-        if "admin" not in b2 or b2["admin"] != admin_before:
+        if "admin" not in b2:
+            with open(USERS_DB, "w") as f:
+                f.write(original)
+            raise RuntimeError("post-write admin verify failed (admin missing) - restored")
+        if not allow_admin_change and b2["admin"] != admin_before:
             with open(USERS_DB, "w") as f:
                 f.write(original)
             raise RuntimeError("post-write admin verify failed - restored")
@@ -1783,9 +1792,9 @@ async def setup_create_admin(payload: dict = Body(...)):
             order.append(username)
 
     try:
-        await _usersdb_apply(mut)
+        await _usersdb_apply(mut, allow_admin_change=True)
     except Exception as exc:
-        _log.error("setup create-admin usersdb failed: %s", exc.__class__.__name__)
+        _log.error("setup create-admin usersdb failed: %s", exc.__class__.__name__, exc_info=True)
         return JSONResponse({"ok": False, "error": "failed to write users database"}, status_code=500)
     report = _report(await _prop_create(username, displayname, email, password, True))
     ok = all(r["ok"] for r in report)

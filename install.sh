@@ -334,6 +334,9 @@ write_config() {
   }
 }
 CONFIG_JSON_EOF
+  # config.json is bind-mounted into the wizard (user 1100), which rewrites it
+  # during first-run setup, so it must be owned by 1100.
+  $SUDO chown 1100:1100 "${PROOT}/config.json"
   ok "wrote ${PROOT}/config.json (domain=${DOMAIN}, tls_mode=local, tz=${TIMEZONE}, LAN IP=${VM_IP})"
 }
 
@@ -460,6 +463,9 @@ provision_runtime() {
   fi
 
   $SUDO mkdir -p "${PROOT}/templates/authelia" "${PROOT}/state/wizard" "${PROOT}/secrets/tls"
+  # the wizard (user 1100) writes into state/wizard (pending_reset, usersdb backups,
+  # setup_complete marker), so it must own that directory.
+  $SUDO chown -R 1100:1100 "${PROOT}/state/wizard"
 
   # -- local-mode Caddyfile (tls internal). Mirrors lib/configure.sh routing +
   #    API/native-client exemptions, but self-signed instead of mounted certs. --
@@ -629,6 +635,9 @@ users:
       - admins
 USERS_EOF
   $SUDO chmod 600 "${PROOT}/templates/authelia/users_database.yml"
+  # the wizard (user 1100) rewrites users_database.yml in place during setup
+  # (same inode Authelia watches), so it must own the file.
+  $SUDO chown 1100:1100 "${PROOT}/templates/authelia/users_database.yml"
 
   # -- compose/wizard.env (generate.sh does NOT create it; wizard.yml requires
   #    it). Only SF_BASE_DOMAIN is needed at boot; integration creds are written
