@@ -671,6 +671,20 @@ run_bootstrap() {
   # bootstrap.sh returns non-zero when its verify stage sees the arr-stack
   # subdomains missing - EXPECTED on a core-only install. So we don't trust its
   # exit code alone: we run it, then verify the CORE containers + edge ourselves.
+
+  # Fresh-install only: drop credential-bearing volumes a prior/partial install
+  # may have left, so Immich Postgres + Authelia re-initialise with THIS run's
+  # freshly generated secrets (a stale pgdata keeps its OLD password and then
+  # auth-fails). install.sh aborts in Step 1 if INSTALL_DIR already exists, so
+  # this only ever runs on a clean box - never against a live appliance, and
+  # never via bootstrap.sh --restart / --verify-only (those are bootstrap flags,
+  # not install).
+  $SUDO docker volume rm -f \
+    fcuk-em-all_immich_pgdata \
+    fcuk-em-all_immich_upload \
+    fcuk-em-all_immich_modelcache \
+    fcuk-em-all_authelia_data 2>/dev/null || true
+
   local brc=0
   $SUDO bash "${PROOT}/bootstrap.sh" || brc=$?
   if [ "$brc" -ne 0 ]; then
