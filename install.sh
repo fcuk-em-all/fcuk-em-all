@@ -672,13 +672,14 @@ run_bootstrap() {
   # subdomains missing - EXPECTED on a core-only install. So we don't trust its
   # exit code alone: we run it, then verify the CORE containers + edge ourselves.
 
-  # Fresh-install only: drop credential-bearing volumes a prior/partial install
-  # may have left, so Immich Postgres + Authelia re-initialise with THIS run's
-  # freshly generated secrets (a stale pgdata keeps its OLD password and then
-  # auth-fails). install.sh aborts in Step 1 if INSTALL_DIR already exists, so
-  # this only ever runs on a clean box - never against a live appliance, and
-  # never via bootstrap.sh --restart / --verify-only (those are bootstrap flags,
-  # not install).
+  # UNCONDITIONAL - always runs before bootstrap. Drop credential-bearing volumes
+  # a prior/partial install may have left, so Immich Postgres + Authelia
+  # re-initialise with THIS run's freshly generated secrets (a stale pgdata keeps
+  # its OLD password and then auth-fails). Force-remove any lingering containers
+  # holding those volumes FIRST - otherwise `docker volume rm` fails "volume in
+  # use" and, silenced by || true, leaves the stale volume in place.
+  $SUDO docker rm -f fcuk-em-all-immich fcuk-em-all-immich-postgres \
+    fcuk-em-all-immich-redis fcuk-em-all-immich-ml fcuk-em-all-authelia 2>/dev/null || true
   $SUDO docker volume rm -f \
     fcuk-em-all_immich_pgdata \
     fcuk-em-all_immich_upload \
